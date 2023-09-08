@@ -20,6 +20,9 @@ def importer(ciudad,inmueble,transaccion):
     elif ciudad == "Cali":
         ciudadstr = "Cali"
         ciudadcoords = [[-76.5225,3.43722],[-76.5425,3.45722]]
+    elif ciudad == "Barranquilla":
+        ciudadstr = "Barranquilla"
+        ciudadcoords = [[-74.5225,7.43722],[-74.5425,7.45722]]
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
@@ -27,7 +30,7 @@ def importer(ciudad,inmueble,transaccion):
     homes = []
     now = date.today()
 
-    for offset in range(0,10000,25):
+    for offset in range(0,1000,25):
         print(offset)
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
@@ -164,7 +167,7 @@ def importer(ciudad,inmueble,transaccion):
         "credentials": "include",
     }
 
-    for offset in range(0,100,100):
+    for offset in range(0,1000,100):
         print(offset)
         response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
         data = response.json()
