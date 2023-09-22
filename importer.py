@@ -4,6 +4,7 @@ import time
 from datetime import date
 from database import SessionLocal
 from models import Estate
+from unidecode import unidecode
 
 def importer(ciudad,inmueble,transaccion):
     if transaccion == "venta":
@@ -30,7 +31,8 @@ def importer(ciudad,inmueble,transaccion):
     homes = []
     now = date.today()
 
-    for offset in range(0,1000,25):
+    for offset in range(0,10000,25):
+
         print(offset)
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
@@ -133,7 +135,7 @@ def importer(ciudad,inmueble,transaccion):
                     pid=subdata["property_id"],
                     city=suborg["city"],
                     barrio= suborg["barrio"],
-                    url=rooturl+suborg["barrio"].replace(" ","-")+"/"+suborg["city"]+"/"+str(subdata["fr_property_id"]),
+                    url=rooturl+suborg["barrio"].replace(" ","-")+"/"+unidecode(suborg["city"])+"/"+str(subdata["fr_property_id"]),
                     fuente="Finca Raiz",
                     m2price=float(subdata["price"])/area,
                     fecha=now,
@@ -148,7 +150,7 @@ def importer(ciudad,inmueble,transaccion):
 
 
 
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 
     headers = {
@@ -167,7 +169,7 @@ def importer(ciudad,inmueble,transaccion):
         "credentials": "include",
     }
 
-    for offset in range(0,1000,100):
+    for offset in range(0,10000,100):
         print(offset)
         response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
         data = response.json()
@@ -211,7 +213,7 @@ def importer(ciudad,inmueble,transaccion):
             )
 
             homes.append(subestate)
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 
     print(len(homes))
