@@ -17,6 +17,17 @@ async def filldatabase(ciudad: str, inmueble:str, transaccion:str):
     importer(ciudad,inmueble,transaccion)
     return {"message": f"Hello {ciudad}"}
 
+@app.get("/absoluteimporter")
+async def filldatabase():
+    for ciudad in ["Bogota","Medellin","Cali","Barranqilla"]:
+        for inmueble in ["casa","apartamento"]:
+            for transaccion in ["venta","arriendo"]:
+                importer(ciudad,inmueble,transaccion)
+    return {"message": f"Hello {ciudad}"}
+
+
+
+
 @app.get("/query/{ciudad}")
 async def querydatabase(ciudad: str):
     results = []

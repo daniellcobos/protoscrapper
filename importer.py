@@ -181,7 +181,10 @@ def importer(ciudad,inmueble,transaccion):
             else:
                 price = float(hit["mvalorventa"])
             suborg = {}
-            area = float(hit["marea"])
+            try:
+                area = float(hit["marea"])
+            except:
+                area = 1
             rooms = hit["mnrocuartos"]
             bath = hit["mnrobanos"]
             suborg["property_type"] = inmueble
