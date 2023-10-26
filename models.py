@@ -20,6 +20,7 @@ class Estate(Base):
     m2price = Column(Float)
     fecha = Column(Date)
     tipo = Column(String)
+    lp = Column(String)
 
     def __repr__(self):
         return "<pid(name='%s', precio='%s', barrio='%s', tipo='%s')>" % (

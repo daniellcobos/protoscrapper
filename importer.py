@@ -31,7 +31,7 @@ def importer(ciudad,inmueble,transaccion):
     homes = []
     now = date.today()
 
-    for offset in range(0,10000,25):
+    for offset in range(0,5000,25):
 
         print(offset)
         headers = {
@@ -104,12 +104,16 @@ def importer(ciudad,inmueble,transaccion):
             response = requests.post('https://api.fincaraiz.com.co/document/api/1.0/listing/search',
             headers=headers, json=json_data)
             data = response.json()
+
             hits = data["hits"]["hits"]
             rooturl = "https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/"
             for h in hits:
 
                 subdata  = (h["_source"]["listing"])
-
+                if "location_point" in subdata["locations"]:
+                    lp = subdata["locations"]["location_point"]
+                else:
+                    lp = "0,0"
 
                 suborg = {}
                 if "neighbourhoods" in subdata["locations"]:
@@ -139,7 +143,8 @@ def importer(ciudad,inmueble,transaccion):
                     fuente="Finca Raiz",
                     m2price=float(subdata["price"])/area,
                     fecha=now,
-                    tipo = transaccion
+                    tipo = transaccion,
+                    lp = lp
                 )
                 homes.append(subestate)
         except:
@@ -150,7 +155,7 @@ def importer(ciudad,inmueble,transaccion):
 
 
 
-        time.sleep(0.25)
+        time.sleep(0.025)
 
 
     headers = {
@@ -169,12 +174,14 @@ def importer(ciudad,inmueble,transaccion):
         "credentials": "include",
     }
 
-    for offset in range(0,10000,100):
+    for offset in range(0,5000,25):
         print(offset)
         response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
         data = response.json()
         hits = data["results"]
+
         for hit in hits:
+            print(hit)
             price = 0
             if transaccion == 'arriendo':
                 price = float(hit["mvalorarriendo"])
@@ -212,11 +219,12 @@ def importer(ciudad,inmueble,transaccion):
                 fuente="Metro Cuadrado",
                 m2price=price / area,
                 fecha=now,
-                tipo = transaccion
+                tipo = transaccion,
+                lp = "0,0"
             )
 
             homes.append(subestate)
-        time.sleep(0.25)
+        time.sleep(0.025)
 
 
     print(len(homes))
