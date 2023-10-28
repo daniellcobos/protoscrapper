@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, Date
 from sqlalchemy.orm import relationship
 
 from database import Base
-
+from geoalchemy2 import Geometry
 
 class Estate(Base):
     __tablename__ = "estate"
@@ -20,7 +20,9 @@ class Estate(Base):
     m2price = Column(Float)
     fecha = Column(Date)
     tipo = Column(String)
-    lp = Column(String)
+    lp =  Column(Geometry('POINT'))
+    cons = Column(String)
+    garage = Column(String)
 
     def __repr__(self):
         return "<pid(name='%s', precio='%s', barrio='%s', tipo='%s')>" % (

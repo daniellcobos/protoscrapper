@@ -7,6 +7,7 @@ from models import Estate
 from unidecode import unidecode
 
 def importer(ciudad,inmueble,transaccion):
+    queries = 2000
     if transaccion == "venta":
         tslug = 'sell'
     if transaccion == "arriendo":
@@ -18,6 +19,7 @@ def importer(ciudad,inmueble,transaccion):
     if ciudad == "Medellin":
         ciudadstr = "Medellín"
         ciudadcoords = [[-75.5635900,6.2518400],[-75.5435900,6.2318400]]
+        queries = 4000
     elif ciudad == "Cali":
         ciudadstr = "Cali"
         ciudadcoords = [[-76.5225,3.43722],[-76.5425,3.45722]]
@@ -27,13 +29,15 @@ def importer(ciudad,inmueble,transaccion):
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
+        queries = 10000
     hitlist = []
     homes = []
     now = date.today()
 
-    for offset in range(0,5000,25):
 
-        print(offset)
+    for offset in range(0,queries,25):
+
+
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
            "referer": "https://fincaraiz.com.co/"
@@ -107,13 +111,15 @@ def importer(ciudad,inmueble,transaccion):
 
             hits = data["hits"]["hits"]
             rooturl = "https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/"
+            print(hits[1])
             for h in hits:
 
                 subdata  = (h["_source"]["listing"])
                 if "location_point" in subdata["locations"]:
                     lp = subdata["locations"]["location_point"]
+
                 else:
-                    lp = "0,0"
+                    lp = "POINT(0 0)"
 
                 suborg = {}
                 if "neighbourhoods" in subdata["locations"]:
@@ -124,10 +130,14 @@ def importer(ciudad,inmueble,transaccion):
                 area = float(subdata["area"])
                 rooms = subdata["rooms"]["name"]
                 bath = subdata["baths"]["name"]
-                if type(rooms) is str:
+
+                try:
+                    rooms = int(rooms)
+                    bath = int(bath)
+                except:
                     rooms = 0
-                if type(bath) is str:
                     bath = 0
+
                 if area == 0:
                     area = 1
                 subestate = Estate(
@@ -144,7 +154,9 @@ def importer(ciudad,inmueble,transaccion):
                     m2price=float(subdata["price"])/area,
                     fecha=now,
                     tipo = transaccion,
-                    lp = lp
+                    lp = lp,
+                    cons = "No aplica"
+
                 )
                 homes.append(subestate)
         except:
@@ -174,14 +186,14 @@ def importer(ciudad,inmueble,transaccion):
         "credentials": "include",
     }
 
-    for offset in range(0,5000,25):
-        print(offset)
+    for offset in range(0,queries,100):
+
         response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
         data = response.json()
         hits = data["results"]
 
         for hit in hits:
-            print(hit)
+
             price = 0
             if transaccion == 'arriendo':
                 price = float(hit["mvalorarriendo"])
@@ -200,10 +212,15 @@ def importer(ciudad,inmueble,transaccion):
             suborg["barrio"] = hit["mbarrio"]
             suborg["fuente"] = "Metro Cuadrado"
             suborg["link"] = "https://www.metrocuadrado.com" + hit["link"]
-            if type(rooms) is str:
+            suborg["idven"] = hit['midempresa']
+
+            try:
+                rooms = int(rooms)
+                bath = int(bath)
+            except:
                 rooms = 0
-            if type(bath) is str:
                 bath = 0
+
             if area == 0:
                 area = 1
             subestate = Estate(
@@ -220,7 +237,8 @@ def importer(ciudad,inmueble,transaccion):
                 m2price=price / area,
                 fecha=now,
                 tipo = transaccion,
-                lp = "0,0"
+                lp = "POINT(0 0)",
+                cons = suborg["idven"]
             )
 
             homes.append(subestate)

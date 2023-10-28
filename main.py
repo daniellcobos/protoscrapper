@@ -68,8 +68,9 @@ async def databaseSample(ciudad:str):
         ciudadq = 'Medellín'
     with SessionLocal.begin() as session:
         print('e')
-        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 100).order_by(desc('fecha')).limit(2000).statement
+        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 100, Estate.bath > 0).order_by(desc('fecha')).limit(2000).statement
         df = pd.read_sql_query(query,session.bind)
+        df = df.drop(['lp'],axis=1)
         dfs = df.sample(n=100)
         dfs.to_excel(ciudad + 'sample.xlsx')
 

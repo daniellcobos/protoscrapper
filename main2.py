@@ -1,44 +1,36 @@
 import requests
 import pandas as pd
 import time
+from bs4 import BeautifulSoup
+import json
 
 hitlist = []
 
-headers = {
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "es-419,es;q=0.9,es-ES;q=0.8,en;q=0.7,en-GB;q=0.6,en-US;q=0.5,ca;q=0.4,pt;q=0.3",
-    "sec-ch-ua": "\"Chromium\";v=\"112\", \"Microsoft Edge\";v=\"112\", \"Not:A-Brand\";v=\"99\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"Windows\"",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "x-api-key": "P1MfFHfQMOtL16Zpg36NcntJYCLFm8FqFfudnavl",
-    "x-requested-with": "XMLHttpRequest",
-    "referrer": "https://www.metrocuadrado.com/apartamento/venta/bogota/?search=form",
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "credentials": "include",
-}
-hitlist = []
-for  offset in range(0,10000,100):
 
-    response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList=venta&city=Bogotá&realEstateTypeList=apartamento&from='+str(offset) +'&size=100',headers=headers)
-    data = response.json()
-    hits = data["results"]
-    for hit in hits:
-        suborg = {}
-        suborg["area"] = float(hit["marea"])
-        suborg["rooms"] = hit["mnrocuartos"]
-        suborg["baths"] = hit["mnrobanos"]
-        suborg["price"] = float(hit["mvalorventa"])
-        suborg["property_type"] = "Apartamento"
-        suborg["id"] = hit['midinmueble']
-        suborg["city"] = hit["mciudad"]["nombre"]
-        suborg["barrio"] = hit["mbarrio"]
-        hitlist.append(suborg)
-    time.sleep(0.5)
-df = pd.DataFrame(hitlist)
-df = df.drop_duplicates()
-df["preciom2"] = df["price"]/df["area"]
-print(df)
-df.to_excel("Lista2.xlsx")
+hitlist = []
+tslug = 'sell'
+inslug = "apartment"
+ciudadstr = "Bogota"
+ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
+for  offset in range(0,1,1):
+    headers = {
+        "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
+        "referer": "https://fincaraiz.com.co/"
+    }
+
+
+
+    response = requests.get('https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/La-Campiña/Bogota/10145612',headers=headers)
+    data = response.text
+
+
+    # parse the HTML
+    soup = BeautifulSoup(data, "html.parser")
+
+    # print the HTML as text
+    script = soup.find("script",id="__NEXT_DATA__")
+    hdict = json.loads(script.text)["props"]["pageProps"]
+    print(hdict.keys())
+    print(hdict["garages"])
+    print(hdict['seo'])
+    print(hdict['stratum'])
