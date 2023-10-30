@@ -5,6 +5,8 @@ from datetime import date
 from database import SessionLocal
 from models import Estate
 from unidecode import unidecode
+import json
+from bs4 import BeautifulSoup
 
 def importer(ciudad,inmueble,transaccion):
     queries = 2000
@@ -29,7 +31,7 @@ def importer(ciudad,inmueble,transaccion):
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
-        queries = 10000
+        queries = 8000
     hitlist = []
     homes = []
     now = date.today()
@@ -111,9 +113,10 @@ def importer(ciudad,inmueble,transaccion):
 
             hits = data["hits"]["hits"]
             rooturl = "https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/"
-            print(hits[1])
+            k = 0
             for h in hits:
-
+                k = k + 1
+                print(k)
                 subdata  = (h["_source"]["listing"])
                 if "location_point" in subdata["locations"]:
                     lp = subdata["locations"]["location_point"]
@@ -140,6 +143,9 @@ def importer(ciudad,inmueble,transaccion):
 
                 if area == 0:
                     area = 1
+                url = rooturl+suborg["barrio"].replace(" ","-")+"/"+unidecode(suborg["city"])+"/"+str(subdata["fr_property_id"])
+                garage,estrato = fincaraizindComp(url)
+
                 subestate = Estate(
                     area=area,
                     rooms=rooms,
@@ -149,13 +155,16 @@ def importer(ciudad,inmueble,transaccion):
                     pid=subdata["property_id"],
                     city=suborg["city"],
                     barrio= suborg["barrio"],
-                    url=rooturl+suborg["barrio"].replace(" ","-")+"/"+unidecode(suborg["city"])+"/"+str(subdata["fr_property_id"]),
+                    url=url,
+                    garage = garage,
+                    estrato = estrato,
                     fuente="Finca Raiz",
                     m2price=float(subdata["price"])/area,
                     fecha=now,
                     tipo = transaccion,
                     lp = lp,
                     cons = "No aplica"
+
 
                 )
                 homes.append(subestate)
@@ -167,7 +176,7 @@ def importer(ciudad,inmueble,transaccion):
 
 
 
-        time.sleep(0.025)
+
 
 
     headers = {
@@ -204,6 +213,9 @@ def importer(ciudad,inmueble,transaccion):
                 area = float(hit["marea"])
             except:
                 area = 1
+
+            url = "https://www.metrocuadrado.com" + hit["link"]
+            garage,estrato,antiguedad = MetroCuadradoComp(url)
             rooms = hit["mnrocuartos"]
             bath = hit["mnrobanos"]
             suborg["property_type"] = inmueble
@@ -211,7 +223,7 @@ def importer(ciudad,inmueble,transaccion):
             suborg["city"] = hit["mciudad"]["nombre"]
             suborg["barrio"] = hit["mbarrio"]
             suborg["fuente"] = "Metro Cuadrado"
-            suborg["link"] = "https://www.metrocuadrado.com" + hit["link"]
+            suborg["link"] = url
             suborg["idven"] = hit['midempresa']
 
             try:
@@ -238,11 +250,14 @@ def importer(ciudad,inmueble,transaccion):
                 fecha=now,
                 tipo = transaccion,
                 lp = "POINT(0 0)",
-                cons = suborg["idven"]
+                cons = suborg["idven"],
+                garage = garage,
+                estrato = estrato,
+                antiguedad = antiguedad,
             )
 
             homes.append(subestate)
-        time.sleep(0.025)
+
 
 
     print(len(homes))
@@ -250,3 +265,54 @@ def importer(ciudad,inmueble,transaccion):
         session.add_all(homes)
         session.commit()
 
+
+
+def fincaraizindComp(url):
+    try:
+        headers = {
+            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
+            "referer": "https://fincaraiz.com.co/"
+        }
+
+        response = requests.get(url,headers=headers)
+        data = response.text
+
+        # parse the HTML
+        soup = BeautifulSoup(data, "html.parser")
+
+        # print the HTML as text
+        script = soup.find("script", id="__NEXT_DATA__")
+        hdict = json.loads(script.text)["props"]["pageProps"]
+        return hdict["garages"]['name'], hdict['stratum']['name']
+
+    except:
+        return "", ""
+
+def MetroCuadradoComp(url):
+    try:
+        headers = {
+            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
+            "referer": "https://fincaraiz.com.co/"
+        }
+
+        response = requests.get(url,headers=headers)
+        data = response.text
+
+        # parse the HTML
+        soup = BeautifulSoup(data, "html.parser")
+
+        # print the HTML as text
+        script = soup.find("script", id="__NEXT_DATA__")
+        hdict = json.loads(script.text)
+        if hdict['props']['initialState']['realestate']['basic']['builtTime']:
+            builtime = (hdict['props']['initialState']['realestate']['basic']['builtTime'])
+        else:
+            builtime = 'sin especificar'
+        garage = (hdict['props']['initialState']['realestate']['basic']['garages'])
+        stratum = (hdict['props']['initialState']['realestate']['basic']['stratum'])
+
+        return (garage,stratum,builtime)
+
+    except Exception as e:
+        print(e)
+        return "sin especificar","sin especificar","sin especificar"

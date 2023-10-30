@@ -20,7 +20,7 @@ for  offset in range(0,1,1):
 
 
 
-    response = requests.get('https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/La-Campiña/Bogota/10145612',headers=headers)
+    response = requests.get('https://www.metrocuadrado.com/inmueble/venta-apartamento-medellin-san-diego-3-habitaciones-2-banos-1-garajes/14473-M3501224',headers=headers)
     data = response.text
 
 
@@ -29,8 +29,7 @@ for  offset in range(0,1,1):
 
     # print the HTML as text
     script = soup.find("script",id="__NEXT_DATA__")
-    hdict = json.loads(script.text)["props"]["pageProps"]
-    print(hdict.keys())
-    print(hdict["garages"])
-    print(hdict['seo'])
-    print(hdict['stratum'])
+    hdict = json.loads(script.text)
+    print(hdict['props']['initialState']['realestate']['basic']['garages'])
+    print(hdict['props']['initialState']['realestate']['basic']['stratum'])
+    print(hdict['props']['initialState']['realestate']['basic']['builtTime'])

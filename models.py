@@ -20,9 +20,11 @@ class Estate(Base):
     m2price = Column(Float)
     fecha = Column(Date)
     tipo = Column(String)
-    lp =  Column(Geometry('POINT'))
+    lp = Column(Geometry('POINT'))
     cons = Column(String)
     garage = Column(String)
+    antiguedad = Column(String)
+    estrato = Column(String)
 
     def __repr__(self):
         return "<pid(name='%s', precio='%s', barrio='%s', tipo='%s')>" % (
