@@ -9,7 +9,7 @@ import json
 from bs4 import BeautifulSoup
 
 def importer(ciudad,inmueble,transaccion):
-    queries = 2000
+    queries = 1000
     if transaccion == "venta":
         tslug = 'sell'
     if transaccion == "arriendo":
@@ -21,7 +21,7 @@ def importer(ciudad,inmueble,transaccion):
     if ciudad == "Medellin":
         ciudadstr = "Medellín"
         ciudadcoords = [[-75.5635900,6.2518400],[-75.5435900,6.2318400]]
-        queries = 4000
+        queries = 500
     elif ciudad == "Cali":
         ciudadstr = "Cali"
         ciudadcoords = [[-76.5225,3.43722],[-76.5425,3.45722]]
@@ -31,14 +31,15 @@ def importer(ciudad,inmueble,transaccion):
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
-        queries = 8000
+        queries = 500
     hitlist = []
     homes = []
     now = date.today()
 
-
+    k = 0
     for offset in range(0,queries,25):
-
+        k = k + 1
+        print(k)
 
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
@@ -113,10 +114,9 @@ def importer(ciudad,inmueble,transaccion):
 
             hits = data["hits"]["hits"]
             rooturl = "https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/"
-            k = 0
+
             for h in hits:
-                k = k + 1
-                print(k)
+
                 subdata  = (h["_source"]["listing"])
                 if "location_point" in subdata["locations"]:
                     lp = subdata["locations"]["location_point"]
@@ -144,7 +144,7 @@ def importer(ciudad,inmueble,transaccion):
                 if area == 0:
                     area = 1
                 url = rooturl+suborg["barrio"].replace(" ","-")+"/"+unidecode(suborg["city"])+"/"+str(subdata["fr_property_id"])
-                garage,estrato = fincaraizindComp(url)
+                garage,estrato,antiguedad = fincaraizindComp(url)
 
                 subestate = Estate(
                     area=area,
@@ -163,6 +163,7 @@ def importer(ciudad,inmueble,transaccion):
                     fecha=now,
                     tipo = transaccion,
                     lp = lp,
+                    antiguedad=antiguedad,
                     cons = "No aplica"
 
 
@@ -194,9 +195,9 @@ def importer(ciudad,inmueble,transaccion):
         "referrerPolicy": "strict-origin-when-cross-origin",
         "credentials": "include",
     }
-
+    k = 0
     for offset in range(0,queries,100):
-
+        k = k + 1
         response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
         data = response.json()
         hits = data["results"]
@@ -283,10 +284,14 @@ def fincaraizindComp(url):
         # print the HTML as text
         script = soup.find("script", id="__NEXT_DATA__")
         hdict = json.loads(script.text)["props"]["pageProps"]
-        return hdict["garages"]['name'], hdict['stratum']['name']
+        hdictseo = json.loads(script.text)["props"]["pageProps"]["seo"]["description"]
+        hdictseo = hdictseo.split(",")
+
+        antiguedad = hdictseo[3][12:]
+        return hdict["garages"]['name'], hdict['stratum']['name'],antiguedad
 
     except:
-        return "", ""
+        return "Sin especificar", "Sin especificar","Sin especificar "
 
 def MetroCuadradoComp(url):
     try:
