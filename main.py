@@ -68,7 +68,7 @@ async def databaseSample(ciudad:str):
         ciudadq = 'Medellín'
     with SessionLocal.begin() as session:
         print('e')
-        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 100, Estate.bath > 0, Estate.tipo == 'venta').order_by(desc('fecha')).limit(2000).statement
+        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 100, Estate.bath > 0, Estate.tipo == 'venta', Estate.garage != None).order_by(desc('fecha')).limit(5000).statement
         df = pd.read_sql_query(query,session.bind)
         df = df.drop(['lp'],axis=1)
         dfs = df.sample(n=100)
