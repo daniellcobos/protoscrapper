@@ -4,7 +4,7 @@ from importer import importer
 from models import Estate
 from database import SessionLocal
 from sqlalchemy import desc
-
+from rates import ratecalulator
 app = FastAPI()
 
 
@@ -68,12 +68,20 @@ async def databaseSample(ciudad:str):
         ciudadq = 'Medellín'
     with SessionLocal.begin() as session:
         print('e')
-        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 100, Estate.bath > 0, Estate.tipo == 'venta', Estate.garage != None).order_by(desc('fecha')).limit(5000).statement
+        query = session.query(Estate).filter(Estate.city == ciudadq,Estate.area >= 50, Estate.tipo == 'venta', Estate.garage != None).order_by(desc('fecha')).limit(5000).statement
         df = pd.read_sql_query(query,session.bind)
         df = df.drop(['lp'],axis=1)
-        dfs = df.sample(n=100)
+        dfs = df.sample(n=200)
         dfs.to_excel(ciudad + 'sample.xlsx')
 
 
     return {"answer":"respuestas mostradas"}
 
+@app.get("/rate/{ciudad}")
+async def getrates(ciudad: str):
+    if ciudad == 'Bogota':
+        ciudadq = 'Bogotá'
+    if ciudad == 'Medellin':
+        ciudadq = 'Medellín'
+    ratecalulator(ciudadq)
+    return{"rates":"calculated"}

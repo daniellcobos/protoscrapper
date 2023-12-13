@@ -9,7 +9,7 @@ import json
 from bs4 import BeautifulSoup
 
 def importer(ciudad,inmueble,transaccion):
-    queries = 1000
+    queries = 2000
     if transaccion == "venta":
         tslug = 'sell'
     if transaccion == "arriendo":
@@ -127,6 +127,7 @@ def importer(ciudad,inmueble,transaccion):
                 suborg = {}
                 if "neighbourhoods" in subdata["locations"]:
                     suborg["barrio"] = subdata["locations"]["neighbourhoods"][0]["name"]
+                    suborg["barrio"] = suborg["barrio"]
                 else:
                     suborg["barrio"] = "No Barrio"
                 suborg["city"] =subdata["locations"]["cities"][0]["name"]
@@ -154,7 +155,7 @@ def importer(ciudad,inmueble,transaccion):
                     property_type=inmueble,
                     pid=subdata["property_id"],
                     city=suborg["city"],
-                    barrio= suborg["barrio"],
+                    barrio= suborg["barrio"].upper(),
                     url=url,
                     garage = garage,
                     estrato = estrato,
@@ -244,7 +245,7 @@ def importer(ciudad,inmueble,transaccion):
                 property_type="Apartamento",
                 pid=hit['midinmueble'],
                 city=hit["mciudad"]["nombre"],
-                barrio=hit["mbarrio"],
+                barrio=hit["mbarrio"].upper(),
                 url="https://www.metrocuadrado.com" + hit["link"],
                 fuente="Metro Cuadrado",
                 m2price=price / area,
