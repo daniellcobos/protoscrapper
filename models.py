@@ -25,6 +25,7 @@ class Estate(Base):
     garage = Column(String)
     antiguedad = Column(String)
     estrato = Column(String)
+    rate = Column(Float)
 
     def __repr__(self):
         return "<pid(name='%s', precio='%s', barrio='%s', tipo='%s')>" % (
