@@ -9,7 +9,8 @@ import json
 from bs4 import BeautifulSoup
 
 def importer(ciudad,inmueble,transaccion):
-    queries = 2000
+    print(ciudad,inmueble,transaccion)
+    queries = 1000
     if transaccion == "venta":
         tslug = 'sell'
     if transaccion == "arriendo":
@@ -21,7 +22,7 @@ def importer(ciudad,inmueble,transaccion):
     if ciudad == "Medellin":
         ciudadstr = "Medellín"
         ciudadcoords = [[-75.5635900,6.2518400],[-75.5435900,6.2318400]]
-        queries = 500
+        queries = 2000
     elif ciudad == "Cali":
         ciudadstr = "Cali"
         ciudadcoords = [[-76.5225,3.43722],[-76.5425,3.45722]]
@@ -31,15 +32,16 @@ def importer(ciudad,inmueble,transaccion):
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
-        queries = 500
+        queries = 5000
     hitlist = []
     homes = []
     now = date.today()
 
     k = 0
     for offset in range(0,queries,25):
+        print(offset)
         k = k + 1
-        print(k)
+
 
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
@@ -155,7 +157,7 @@ def importer(ciudad,inmueble,transaccion):
                     property_type=inmueble,
                     pid=subdata["property_id"],
                     city=suborg["city"],
-                    barrio= suborg["barrio"].upper(),
+                    barrio= str(suborg["barrio"]).upper(),
                     url=url,
                     garage = garage,
                     estrato = estrato,
@@ -172,6 +174,7 @@ def importer(ciudad,inmueble,transaccion):
                 homes.append(subestate)
         except:
             pass
+
 
 
 
@@ -198,67 +201,71 @@ def importer(ciudad,inmueble,transaccion):
     }
     k = 0
     for offset in range(0,queries,100):
-        k = k + 1
-        response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
-        data = response.json()
-        hits = data["results"]
+        try:
+            print(offset)
+            k = k + 1
+            response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
+            data = response.json()
+            hits = data["results"]
 
-        for hit in hits:
+            for hit in hits:
 
-            price = 0
-            if transaccion == 'arriendo':
-                price = float(hit["mvalorarriendo"])
-            else:
-                price = float(hit["mvalorventa"])
-            suborg = {}
-            try:
-                area = float(hit["marea"])
-            except:
-                area = 1
+                price = 0
+                if transaccion == 'arriendo':
+                    price = float(hit["mvalorarriendo"])
+                else:
+                    price = float(hit["mvalorventa"])
+                suborg = {}
+                try:
+                    area = float(hit["marea"])
+                except:
+                    area = 1
 
-            url = "https://www.metrocuadrado.com" + hit["link"]
-            garage,estrato,antiguedad = MetroCuadradoComp(url)
-            rooms = hit["mnrocuartos"]
-            bath = hit["mnrobanos"]
-            suborg["property_type"] = inmueble
-            suborg["id"] = hit['midinmueble']
-            suborg["city"] = hit["mciudad"]["nombre"]
-            suborg["barrio"] = hit["mbarrio"]
-            suborg["fuente"] = "Metro Cuadrado"
-            suborg["link"] = url
-            suborg["idven"] = hit['midempresa']
+                url = "https://www.metrocuadrado.com" + hit["link"]
+                garage,estrato,antiguedad = MetroCuadradoComp(url)
+                rooms = hit["mnrocuartos"]
+                bath = hit["mnrobanos"]
+                suborg["property_type"] = inmueble
+                suborg["id"] = hit['midinmueble']
+                suborg["city"] = hit["mciudad"]["nombre"]
+                suborg["barrio"] = hit["mbarrio"]
+                suborg["fuente"] = "Metro Cuadrado"
+                suborg["link"] = url
+                suborg["idven"] = hit['midempresa']
 
-            try:
-                rooms = int(rooms)
-                bath = int(bath)
-            except:
-                rooms = 0
-                bath = 0
+                try:
+                    rooms = int(rooms)
+                    bath = int(bath)
+                except:
+                    rooms = 0
+                    bath = 0
 
-            if area == 0:
-                area = 1
-            subestate = Estate(
-                area=area,
-                rooms=rooms,
-                bath=bath,
-                price=price,
-                property_type="Apartamento",
-                pid=hit['midinmueble'],
-                city=hit["mciudad"]["nombre"],
-                barrio=hit["mbarrio"].upper(),
-                url="https://www.metrocuadrado.com" + hit["link"],
-                fuente="Metro Cuadrado",
-                m2price=price / area,
-                fecha=now,
-                tipo = transaccion,
-                lp = "POINT(0 0)",
-                cons = suborg["idven"],
-                garage = garage,
-                estrato = estrato,
-                antiguedad = antiguedad,
-            )
+                if area == 0:
+                    area = 1
+                subestate = Estate(
+                    area=area,
+                    rooms=rooms,
+                    bath=bath,
+                    price=price,
+                    property_type="Apartamento",
+                    pid=hit['midinmueble'],
+                    city=hit["mciudad"]["nombre"],
+                    barrio=str(hit["mbarrio"]).upper(),
+                    url="https://www.metrocuadrado.com" + hit["link"],
+                    fuente="Metro Cuadrado",
+                    m2price=price / area,
+                    fecha=now,
+                    tipo = transaccion,
+                    lp = "POINT(0 0)",
+                    cons = suborg["idven"],
+                    garage = garage,
+                    estrato = estrato,
+                    antiguedad = antiguedad,
+                )
 
-            homes.append(subestate)
+                homes.append(subestate)
+        except:
+            pass
 
 
 
