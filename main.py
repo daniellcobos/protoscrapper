@@ -21,7 +21,7 @@ async def filldatabase(ciudad: str, inmueble:str, transaccion:str):
 
 @app.get("/absoluteimporter")
 async def filldatabase():
-    for ciudad in ["Bogota","Medellin","Cali","Barranqilla"]:
+    for ciudad in ["Bogota","Medellin"]:
         for inmueble in ["casa","apartamento"]:
             for transaccion in ["venta","arriendo"]:
                 importer(ciudad,inmueble,transaccion)

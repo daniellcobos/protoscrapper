@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@localhost/homes"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL, echo =True,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
