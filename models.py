@@ -26,6 +26,7 @@ class Estate(Base):
     antiguedad = Column(String)
     estrato = Column(String)
     rate = Column(Float)
+    imgurl =  Column(String)
 
     def __repr__(self):
         return "<pid(name='%s', precio='%s', barrio='%s', tipo='%s')>" % (

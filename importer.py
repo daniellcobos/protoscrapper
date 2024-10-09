@@ -117,8 +117,9 @@ def importer(ciudad,inmueble,transaccion):
             rooturl = "https://www.fincaraiz.com.co"
             data = response.json()
             hits = data["hits"]["hits"]
-
+            print(hits[0])
             for i,hit in enumerate(hits):
+
 
                 subdata= (hit["_source"]["listing"])
 
@@ -143,7 +144,7 @@ def importer(ciudad,inmueble,transaccion):
                 rooms = subdata["rooms"]
                 bath = subdata["bathrooms"]
                 city = subdata["locations"]["city"][0]["name"]
-
+                imgurl = subdata['img']
                 try:
                     rooms = int(rooms)
                     bath = int(bath)
@@ -176,7 +177,8 @@ def importer(ciudad,inmueble,transaccion):
                     tipo=transaccion,
                     lp=lp,
                     antiguedad=antiguedad,
-                    cons="No aplica"
+                    cons="No aplica",
+                    imgurl = imgurl
                 )
                 homes.append(subestate)
         except Exception as e:
@@ -215,8 +217,9 @@ def importer(ciudad,inmueble,transaccion):
             data = response.json()
             hits = data["results"]
             print(k)
-
+            print(hits[0])
             for hit2 in hits:
+
                 price = 0
                 if transaccion == 'arriendo':
                     price = float(hit2["mvalorarriendo"])
@@ -240,6 +243,7 @@ def importer(ciudad,inmueble,transaccion):
                 suborg["fuente"] = "Metro Cuadrado"
                 suborg["link"] = url
                 suborg["idven"] = hit2['midempresa']
+                imgurl = hit2['imageLink']
 
                 try:
                     rooms = int(rooms)
@@ -269,6 +273,7 @@ def importer(ciudad,inmueble,transaccion):
                     garage = garage,
                     estrato = estrato,
                     antiguedad = antiguedad,
+                    imgurl = imgurl
                 )
                 print(subestate)
                 homes2.append(subestate)
