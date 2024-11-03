@@ -9,39 +9,59 @@ import json
 from bs4 import BeautifulSoup
 
 def importer(ciudad,inmueble,transaccion):
-    print(ciudad,inmueble,transaccion)
-    queries = 1000
+    queries = 2000
     if transaccion == "venta":
+        optype = 1
         tslug = 'sell'
     if transaccion == "arriendo":
+        optype = 2
         tslug = 'rent'
     if inmueble == "apartamento":
         inslug = "apartment"
+        propid = 2
     if inmueble == "casa":
         inslug = "house"
+        propid = 1
     if ciudad == "Medellin":
         ciudadstr = "Medellín"
+        estatestr = {
+                        "name": "Antioquia",
+                        "id": "2d63ee80-421b-488f-992a-0e07a3264c3e",
+                        "slug": "state-colombia-05-antioquia"
+                    }
         ciudadcoords = [[-75.5635900,6.2518400],[-75.5435900,6.2318400]]
-        queries = 2000
+        cityid= "183f0a11-9452-4160-9089-1b0e7ed45863"
+        slug = "city-colombia-05-001"
+        queries = 500
     elif ciudad == "Cali":
         ciudadstr = "Cali"
         ciudadcoords = [[-76.5225,3.43722],[-76.5425,3.45722]]
+        queries = 400
     elif ciudad == "Barranquilla":
         ciudadstr = "Barranquilla"
         ciudadcoords = [[-74.5225,7.43722],[-74.5425,7.45722]]
+        queries = 400
     else:
         ciudadstr = "Bogota"
         ciudadcoords =[[-74.0611609,4.6707751],[-74.0889301,4.5628634]]
-        queries = 5000
+        slug = "city-colombia-11-001"
+        estatestr = {
+                "name": "Bogotá, d.c.",
+                "id": "2d9f0ad9-8b72-4364-a7dc-e161d7dddb4d",
+                "slug": "state-colombia-11-bogota-dc"
+            }
+        cityid = "65d441f3-a239-4111-bc5b-01c5a268869f"
+
+        queries = 1500
     hitlist = []
     homes = []
+    homes2 = []
     now = date.today()
 
     k = 0
-    for offset in range(0,queries,25):
-        print(offset)
+    for page in range(1,50):
         k = k + 1
-
+        print(k)
 
         headers = {
            "USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/71.0.3578.80 Chrome/71.0.3578.80 Safari/537.36",
@@ -49,94 +69,82 @@ def importer(ciudad,inmueble,transaccion):
         }
 
         json_data = {
-         'filter': {
-            'offer': {
-                'slug': [
-                    tslug,
-                  ],
-              },
-            'property_type': {
-                'slug': [
-                    inslug,
-                  ],
-              },
-            'locations': {
-                'location_point': ciudadcoords,
-            },
-
-         },
-
-         'fields': {
-            'exclude': [],
-
-            'include': [
-                'area',
-                'is_new',
-                'baths.name',
-                'locations.cities.name',
-                'locations.cities.slug',
-
-                'locations.countries.name',
-                'locations.countries.slug',
-                'locations.groups.name',
-                'locations.groups.slug',
-                'locations.groups.subgroups.name',
-                'locations.groups.subgroups.slug',
-                'locations.location_point',
-                'locations.neighbourhoods.name',
-                'locations.neighbourhoods.slug',
-                'locations.states.name',
-                'locations.states.slug',
-                'locations.view_map.slug',
-                'price',
-                'products.configuration.tag_id',
-                'products.configuration.tag_name',
-                'products.label',
-                'products.name',
-                'products.slug',
-                'property_id',
-                'fr_property_id',
-                'rooms.name',
-                'title',
-                'property_type.name',
-
-
+    "variables": {
+        "rows": 21,
+        "params": {
+            "page": page,
+            "order": 2,
+            "operation_type_id": optype,
+            "property_type_id": [
+               propid
             ],
-            'limit': 25,
-            'offset': offset, #set to 25 to get the second page, 50 for the 3rd page etc.
-            'ordering': [],
-            'platform': 40,
-            'with_algorithm': False,
-           },
-        }
+            "currencyID": 4,
+            "m2Currency": 4,
+            "locations": [
+                {
+                    "country": [
+                        {
+                            "name": "Colombia",
+                            "id": "858656c1-bbb1-4b0d-b569-f61bbdebc8f0",
+                            "slug": "country-48-colombia"
+                        }
+                    ],
+                    "name": ciudadstr,
+                    "location_point": {
+                        "coordinates": ciudadcoords[0],
+                        "type": "point"
+                    },
+                    "id": cityid,
+                    "type": "CITY",
+                    "slug": [
+                        slug
+                    ],
+                    "estate": estatestr,
+                }
+            ]
+        },
+        "page": 1,
+        "source": 10
+    },
+    "query": ""
+}
+
+
+
         try:
-            response = requests.post('https://api.fincaraiz.com.co/document/api/1.0/listing/search',
+            response = requests.post('https://search-service.fincaraiz.com.co/api/v1/properties/search',
             headers=headers, json=json_data)
+            rooturl = "https://www.fincaraiz.com.co"
             data = response.json()
-
             hits = data["hits"]["hits"]
-            rooturl = "https://www.fincaraiz.com.co/inmueble/apartamento-en-venta/"
+            print(hits[0])
+            for i,hit in enumerate(hits):
 
-            for h in hits:
 
-                subdata  = (h["_source"]["listing"])
+                subdata= (hit["_source"]["listing"])
+
                 if "location_point" in subdata["locations"]:
+
                     lp = subdata["locations"]["location_point"]
+
+
 
                 else:
                     lp = "POINT(0 0)"
 
                 suborg = {}
-                if "neighbourhoods" in subdata["locations"]:
-                    suborg["barrio"] = subdata["locations"]["neighbourhoods"][0]["name"]
+
+                if 'neighbourhood' in subdata["locations"]:
+                    suborg["barrio"] = subdata["locations"]['neighbourhood'][0]["name"]
                     suborg["barrio"] = suborg["barrio"]
                 else:
                     suborg["barrio"] = "No Barrio"
-                suborg["city"] =subdata["locations"]["cities"][0]["name"]
-                area = float(subdata["area"])
-                rooms = subdata["rooms"]["name"]
-                bath = subdata["baths"]["name"]
 
+                area = float(subdata["m2"])
+                rooms = subdata["rooms"]
+                bath = subdata["bathrooms"]
+                city = subdata["locations"]["city"][0]["name"]
+                imgurl = subdata['img']
                 try:
                     rooms = int(rooms)
                     bath = int(bath)
@@ -146,36 +154,36 @@ def importer(ciudad,inmueble,transaccion):
 
                 if area == 0:
                     area = 1
-                url = rooturl+suborg["barrio"].replace(" ","-")+"/"+unidecode(suborg["city"])+"/"+str(subdata["fr_property_id"])
-                garage,estrato,antiguedad = fincaraizindComp(url)
+                url = str(rooturl) + str(subdata["link"])
+                garage = subdata["garage"]
+                estrato = subdata["stratum"]
+                antiguedad = subdata["construction_year"]
 
                 subestate = Estate(
                     area=area,
                     rooms=rooms,
                     bath=bath,
-                    price=float(subdata["price"]),
+                    price=float(subdata["price"]["amount"]),
                     property_type=inmueble,
-                    pid=subdata["property_id"],
-                    city=suborg["city"],
-                    barrio= str(suborg["barrio"]).upper(),
+                    pid=subdata["id"],
+                    city=city,
+                    barrio=str(suborg["barrio"]).upper(),
                     url=url,
-                    garage = garage,
-                    estrato = estrato,
+                    garage=garage,
+                    estrato=estrato,
                     fuente="Finca Raiz",
-                    m2price=float(subdata["price"])/area,
+                    m2price=float(subdata["price"]["amount"]) / area,
                     fecha=now,
-                    tipo = transaccion,
-                    lp = lp,
+                    tipo=transaccion,
+                    lp=lp,
                     antiguedad=antiguedad,
-                    cons = "No aplica"
-
-
+                    cons="No aplica",
+                    imgurl = imgurl
                 )
                 homes.append(subestate)
-        except:
-            pass
-
-
+        except Exception as e:
+            print(e)
+        time.sleep(2)
 
 
 
@@ -200,38 +208,42 @@ def importer(ciudad,inmueble,transaccion):
         "credentials": "include",
     }
     k = 0
-    for offset in range(0,queries,100):
+    for offset in range(0,1000,50):
         try:
-            print(offset)
             k = k + 1
-            response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+inmueble+'&from='+str(offset) +'&size=100',headers=headers)
+            print("Metrocuadrado",k)
+            ult = "https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList=venta&realEstateStatusList=nuevo&city=Bogot%C3%A1&from=0&size=50"
+            response = requests.get('https://www.metrocuadrado.com/rest-search/search?realEstateBusinessList='+transaccion+'&city='+ciudadstr+'&realEstateTypeList='+ inmueble+'&from='+str(offset) +'&size=50',headers=headers)
             data = response.json()
             hits = data["results"]
-
-            for hit in hits:
+            print(k)
+            print(hits[0])
+            for hit2 in hits:
 
                 price = 0
                 if transaccion == 'arriendo':
-                    price = float(hit["mvalorarriendo"])
+                    price = float(hit2["mvalorarriendo"])
                 else:
-                    price = float(hit["mvalorventa"])
+                    price = float(hit2["mvalorventa"])
                 suborg = {}
                 try:
-                    area = float(hit["marea"])
+                    area = float(hit2["marea"])
                 except:
                     area = 1
 
-                url = "https://www.metrocuadrado.com" + hit["link"]
+                url = "https://www.metrocuadrado.com" + hit2["link"]
                 garage,estrato,antiguedad = MetroCuadradoComp(url)
-                rooms = hit["mnrocuartos"]
-                bath = hit["mnrobanos"]
+                rooms = hit2["mnrocuartos"]
+                bath = hit2["mnrobanos"]
                 suborg["property_type"] = inmueble
-                suborg["id"] = hit['midinmueble']
-                suborg["city"] = hit["mciudad"]["nombre"]
-                suborg["barrio"] = hit["mbarrio"]
+                suborg["id"] = hit2['midinmueble']
+
+                suborg["city"] = hit2["mciudad"]["nombre"]
+                suborg["barrio"] = hit2["mbarrio"]
                 suborg["fuente"] = "Metro Cuadrado"
                 suborg["link"] = url
-                suborg["idven"] = hit['midempresa']
+                suborg["idven"] = hit2['midempresa']
+                imgurl = hit2['imageLink']
 
                 try:
                     rooms = int(rooms)
@@ -248,10 +260,10 @@ def importer(ciudad,inmueble,transaccion):
                     bath=bath,
                     price=price,
                     property_type="Apartamento",
-                    pid=hit['midinmueble'],
-                    city=hit["mciudad"]["nombre"],
-                    barrio=str(hit["mbarrio"]).upper(),
-                    url="https://www.metrocuadrado.com" + hit["link"],
+                    pid=hit2['midinmueble'],
+                    city=hit2["mciudad"]["nombre"],
+                    barrio=hit2["mbarrio"].upper(),
+                    url="https://www.metrocuadrado.com" + hit2["link"],
                     fuente="Metro Cuadrado",
                     m2price=price / area,
                     fecha=now,
@@ -261,11 +273,12 @@ def importer(ciudad,inmueble,transaccion):
                     garage = garage,
                     estrato = estrato,
                     antiguedad = antiguedad,
+                    imgurl = imgurl
                 )
-
-                homes.append(subestate)
-        except:
-            pass
+                print(subestate)
+                homes2.append(subestate)
+        except Exception as e:
+            print(e)
 
 
 
@@ -273,6 +286,11 @@ def importer(ciudad,inmueble,transaccion):
     with SessionLocal.begin() as session:
         session.add_all(homes)
         session.commit()
+    with SessionLocal.begin() as session:
+        session.add_all(homes2)
+        session.commit()
+
+
 
 
 

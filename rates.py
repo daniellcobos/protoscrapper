@@ -16,7 +16,6 @@ def ratecalulator(ciudad):
       "where t1.barrio = t2.barrio order by rate")
   with SessionLocal.begin() as session:
       df = pd.read_sql_query(sqltext,session.bind)
-      print(df)
       df = df.sort_values('fecha').groupby('barrio').tail(1)
       df2 = df.mean(numeric_only=True)[0]
       sql = text("update estate set rate = :x where city = :c ")
@@ -26,4 +25,4 @@ def ratecalulator(ciudad):
           sql = text("update estate set rate = :x where barrio = :b and city = :c ")
           session.execute(sql,{"b": rows["barrio"],"x":rows["rate"],"c":ciudad})
           session.commit
-      print(df2)
+      print(df,df2)
